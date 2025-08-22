@@ -15,6 +15,11 @@ async function bootstrap() {
   });
   app.enableCors();
   app.useGlobalPipes(new ValidationPipe());
+  app.use((req, res, next) => {
+    console.log('---HEADERS DEBUG---');
+    console.log(req.headers); // Muestra todos los headers
+    next();
+  });
   await app.listen(parseInt(process.env.PORT, 10) || 3001);
 }
 bootstrap();
