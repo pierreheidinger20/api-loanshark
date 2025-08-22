@@ -15,8 +15,7 @@ import { LoansModule } from './loans/loans.module';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const dataBaseConfig = configService.get<Database>('database');
-        const uri = `mongodb://${dataBaseConfig.user}:${dataBaseConfig.password}@${dataBaseConfig.server}:${dataBaseConfig.port}/${dataBaseConfig.database}`;
-        return { uri , ssl: dataBaseConfig.ssl};
+        return { uri: dataBaseConfig.url, ssl: dataBaseConfig.ssl };
       },
       inject: [ConfigService],
     }),

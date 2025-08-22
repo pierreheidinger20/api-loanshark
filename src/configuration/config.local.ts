@@ -8,6 +8,7 @@ export default () => ({
     synchronize: true,
     ssl: false,
     rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED,
+    url: "mongodb://mongo:uxkZbIPsXMMMlPuGdSXhzXGBlgtoOmDp@shinkansen.proxy.rlwy.net:28836",
   },
   jwt: {
     secret: 'Kyoku@1P=W5Yp0hh+tJc',

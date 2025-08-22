@@ -7,4 +7,5 @@ export interface Database {
   synchronize?: boolean;
   ssl?: boolean;
   rejectUnauthorized?: boolean;
+  url?: string;
 }

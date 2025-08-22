@@ -8,6 +8,7 @@ export default () => ({
     synchronize: process.env.SYNCRONIZE,
     ssl: process.env.SSL,
     rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED,
+    url: process.env.MONGO_URL,
   },
   jwt: {
     secret: process.env.SECRETTOKEN,
