@@ -12,7 +12,7 @@ export default () => ({
   },
   jwt: {
     secret: 'Kyoku@1P=W5Yp0hh+tJc',
-    algorithms: 'HS256'
+    algorithms: ['HS256']
   },
   bcrypt: {
     saltOrRounds: 10,
