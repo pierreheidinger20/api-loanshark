@@ -13,17 +13,8 @@ async function bootstrap() {
   app.enableVersioning({
     type: VersioningType.URI,
   });
-  app.enableCors({
-    origin: '*', // o la URL de tu frontend
-    allowedHeaders: ['Authorization', 'Content-Type', 'Accept'],
-    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-  });
+  app.enableCors();
   app.useGlobalPipes(new ValidationPipe());
-  app.use((req, res, next) => {
-    console.log('---HEADERS DEBUG---');
-    console.log(req.headers); // Muestra todos los headers
-    next();
-  });
   await app.listen(parseInt(process.env.PORT, 10) || 3001);
 }
 bootstrap();
