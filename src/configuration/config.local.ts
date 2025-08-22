@@ -1,17 +1,17 @@
 export default () => ({
   database: {
-    user: 'postgres',
-    password: 'AB6sq99q46alFINqjlKq',
-    database: 'railway',
-    server: 'containers-us-west-51.railway.app',
-    port: '7123',
+    user: 'mongo',
+    password: 'uxkZbIPsXMMMlPuGdSXhzXGBlgtoOmDp',
+    database: 'admin',
+    server: 'shinkansen.proxy.rlwy.net',
+    port: '28836',
     synchronize: true,
     ssl: false,
     rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED,
   },
   jwt: {
-    secret: 'i4xlLEWulJX3DfYkJtXWobRj',
-    expiresIn: '3000s',
+    secret: 'Kyoku@1P=W5Yp0hh+tJc',
+    algorithms: 'HS256'
   },
   bcrypt: {
     saltOrRounds: 10,
