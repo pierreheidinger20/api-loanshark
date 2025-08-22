@@ -11,8 +11,8 @@ export default () => ({
     url: process.env.MONGO_URL,
   },
   jwt: {
-    secret: process.env.SECRETTOKEN,
-    expiresIn: process.env.TOKENEXPIRE,
+    secret: process.env.JWT_SECRET_KEY,
+    algorithms: process.env.JWT_ALGORITHM,
   },
   bcrypt: {
     saltOrRounds: process.env.ROUNDSBCRYPT,
