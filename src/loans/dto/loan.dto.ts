@@ -17,6 +17,17 @@ class OrderDto {
   status?: string;
 }
 
+class UserDto {
+  @IsString()
+  username: string;
+
+  @IsString()
+  email: string;
+
+  @IsString()
+  full_name: string;
+}
+
 export class CreateLoanDto {
   @IsNumber()
   amount: number;
@@ -51,4 +62,8 @@ export class CreateLoanDto {
   @Type(() => OrderDto)
   @IsOptional()
   orders?: OrderDto[];
+
+  @ValidateNested()
+  @Type(() => UserDto)
+  user: UserDto;
 }

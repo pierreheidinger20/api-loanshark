@@ -9,6 +9,11 @@ export enum LoanStatus {
   CANCELLED = 'cancelled',
 }
 
+export enum PaymentFrequency {
+  MONTHLY = 'monthly',
+  YEARLY = 'yearly',
+}
+
 // Define el esquema embebido para User
 @Schema({ _id: false })
 export class User {
@@ -71,6 +76,9 @@ export class Loan {
 
   @Prop({ type: [String], default: [] })
   addresses: string[];
+
+  @Prop({ enum: PaymentFrequency, default: PaymentFrequency.MONTHLY })
+  paymentFrequency: PaymentFrequency;
 
   @Prop({ type: [OrderSchema], default: [] })
   orders: Order[];
