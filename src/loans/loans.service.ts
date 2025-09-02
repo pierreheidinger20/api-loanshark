@@ -3,6 +3,8 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Loan, LoanDocument, User } from './loan.entity';
 import { CreateLoanDto } from './dto/loan.dto';
+import { instanceToPlain, plainToInstance } from 'class-transformer';
+import { LoanOutDto } from './dto/loanOut.dto';
 
 @Injectable()
 export class LoansService {
@@ -16,9 +18,16 @@ export class LoansService {
     }
 
     async findAllByUser(user: User, username: string) {
-        if(user.username !== username) {
+        if (user.username !== username) {
             throw new ForbiddenException("You can only access your own loans");
         }
-        return this.loanModel.find({ user, 'user.username': username });
+        let loans
+             = await this.loanModel
+                .find({ user, 'user.username': username })
+                .sort({ createdAt: -1 });
+        let loansDto =  plainToInstance(LoanOutDto, loans, {
+            excludeExtraneousValues: true,
+        });
+        return instanceToPlain(loansDto);
     }
 }

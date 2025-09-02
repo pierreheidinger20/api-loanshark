@@ -85,6 +85,9 @@ export class Loan {
 
   @Prop({ type: UserSchema, required: true })
   user: User;
+
+  @Prop({ default: Date.now })
+  createdAt: Date;
 }
 
 export const LoanSchema = SchemaFactory.createForClass(Loan);
