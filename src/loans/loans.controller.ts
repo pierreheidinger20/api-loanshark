@@ -18,4 +18,10 @@ export class LoansController {
     const user = request['user'];
     return this.loansService.create(user,createLoanDto);
   }
+
+  @Post(':username/orders')
+  async createUserOrders(@Request() request,@Param('username') username: string) {
+    const user = request['user'];
+    return this.loansService.createUserOrders(username);
+  }
 }

@@ -44,6 +44,9 @@ export class Order {
 
   @Prop({ default: 'pending' })
   status: string;
+
+  @Prop()
+  createdAt: Date;
 }
 
 export const OrderSchema = SchemaFactory.createForClass(Order);
