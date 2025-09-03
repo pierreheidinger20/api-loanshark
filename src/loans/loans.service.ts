@@ -26,11 +26,9 @@ export class LoansService {
                 .find({ user, 'user.username': username })
                 .sort({ createdAt: -1 })
                 .populate('user', 'username')
-        // let loansDto = plainToInstance(LoanOutDto, loans, {
-        //     excludeExtraneousValues: true,
-        // });
-        // return instanceToPlain(loansDto);
-
+        loans.forEach(loan => {
+            loan.orders = loan.orders.sort((a, b) => b.date.getTime() - a.date.getTime());
+        });
         return this.mapLoanEntityToDto(loans);
     }
 
@@ -63,10 +61,16 @@ export class LoansService {
             }
             loan.save();
         }
+        console.log('userLoans', userLoans);
+        userLoans.forEach(loan => {
+            loan.orders = loan.orders.sort((a, b) => b.date.getTime() - a.date.getTime());
+        });
+        console.log('userLoans after', userLoans);
         return this.mapLoanEntityToDto(userLoans);
     }
 
     private mapLoanEntityToDto(loans: Loan[]){
+
         let loansDto = plainToInstance(LoanOutDto, loans, {
             excludeExtraneousValues: true,
         });
