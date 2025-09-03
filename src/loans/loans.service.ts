@@ -24,14 +24,17 @@ export class LoansService {
         let loans
             = await this.loanModel
                 .find({ user, 'user.username': username })
-                .sort({ createdAt: -1 });
-        let loansDto = plainToInstance(LoanOutDto, loans, {
-            excludeExtraneousValues: true,
-        });
-        return instanceToPlain(loansDto);
+                .sort({ createdAt: -1 })
+                .populate('user', 'username')
+        // let loansDto = plainToInstance(LoanOutDto, loans, {
+        //     excludeExtraneousValues: true,
+        // });
+        // return instanceToPlain(loansDto);
+
+        return this.mapLoanEntityToDto(loans);
     }
 
-    async createUserOrders(username: string): Promise<Loan[]> {
+    async createUserOrders(username: string): Promise<Record<string, any>> {
         let userLoans
             = await this.loanModel
                 .find({ 'user.username': username })
@@ -60,6 +63,13 @@ export class LoansService {
             }
             loan.save();
         }
-        return userLoans;
+        return this.mapLoanEntityToDto(userLoans);
+    }
+
+    private mapLoanEntityToDto(loans: Loan[]){
+        let loansDto = plainToInstance(LoanOutDto, loans, {
+            excludeExtraneousValues: true,
+        });
+        return instanceToPlain(loansDto);
     }
 }

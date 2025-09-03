@@ -1,5 +1,19 @@
 
-import { Exclude, Expose } from 'class-transformer';
+import { Exclude, Expose, Type } from 'class-transformer';
+
+export class OrderOutDto {
+    @Expose()
+    orderId: string;
+
+    @Expose()
+    amount: number;
+
+    @Expose()
+    date: Date;
+
+    @Expose()
+    status: string;
+}
 
 export class LoanOutDto {
     @Expose()
@@ -36,4 +50,8 @@ export class LoanOutDto {
     get amountInterest(): number {
         return Number(((this.interestRate * this.amount) / 100).toFixed(2));
     }
+
+    @Expose()
+    @Type(() => OrderOutDto)
+    orders: OrderOutDto[];
 }
