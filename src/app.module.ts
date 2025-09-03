@@ -31,10 +31,10 @@ import { LoansModule } from './loans/loans.module';
   ],
   providers: [    
     ConsoleLogger,
-    // {
-    //   provide: APP_GUARD,
-    //   useClass: JwtAuthGuard,
-    // },
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
     // {
     //   provide: APP_GUARD,
     //   useClass: RolesGuard,
