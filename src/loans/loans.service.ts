@@ -1,7 +1,7 @@
 import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
-import { Loan, LoanDocument, Order, User } from './loan.entity';
+import { Loan, LoanDocument, LoanStatus, Order, User } from './loan.entity';
 import { CreateLoanDto } from './dto/loan.dto';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { LoanOutDto } from './dto/loanOut.dto';
@@ -69,11 +69,45 @@ export class LoansService {
         return this.mapLoanEntityToDto(userLoans);
     }
 
-    private mapLoanEntityToDto(loans: Loan[]){
+    private mapLoanEntityToDto(loans: Loan[]) {
 
         let loansDto = plainToInstance(LoanOutDto, loans, {
             excludeExtraneousValues: true,
         });
         return instanceToPlain(loansDto);
+    }
+
+    async getIndicatorsByUser(username: string) {
+        let loans
+            = await this.loanModel
+                .find({ 'user.username': username })
+                .sort({ createdAt: -1 });
+        loans = loans.filter(loan => loan.status === LoanStatus.ACTIVE);
+        let totalActiveLoans = loans.length;
+        let totalActiveAmount = loans.reduce((sum, loan) => sum + loan.amount, 0);
+        let totalActiveMonthlyInterest = loans.reduce((sum, loan) => sum + (loan.amount * loan.interestRate) / 100, 0);
+        let totalAmountOrdersPaids = loans.map(loan => loan.orders.filter(order => order.status === 'paid'))
+            .flat()
+            .reduce((sum, order) => sum + order.amount, 0);
+        return {
+            totalActiveLoans: totalActiveLoans,
+            totalActiveAmount: Number(totalActiveAmount.toFixed(2)),
+            totalActiveMonthlyInterest: Number(totalActiveMonthlyInterest.toFixed(2)),
+            totalAmountOrdersPaids: Number(totalAmountOrdersPaids.toFixed(2)),
+        };
+    }
+
+    async updateOrderStatus(username: string, orderId: string, status: string) {
+        const loan = await this.loanModel.findOne({ 'orders.orderId': orderId });
+        if (!loan) {
+            throw new Error('Loan not found');
+        }
+        const order = loan.orders.find(order => order.orderId === orderId);
+        if (!order) {
+            throw new Error('Order not found');
+        }
+        order.status = status;
+        await loan.save();
+        return order;
     }
 }
