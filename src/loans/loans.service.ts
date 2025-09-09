@@ -36,13 +36,11 @@ export class LoansService {
     }
 
     async createUserOrders(username: string): Promise<Record<string, any>> {
-        console.log('createUserOrders for', username);
         let userLoans
             = await this.loanModel
-                .find({ 'user.username': username })
+                .find({ 'user.username': username , 'deleted': false , status: LoanStatus.ACTIVE})
                 .sort({ createdAt: -1 });
-
-        console.log('userLoans before', userLoans);
+        console.log(userLoans);
         for (let loan of userLoans) {
             var orders = loan.orders;
             var countOrders = orders.length;
@@ -66,11 +64,9 @@ export class LoansService {
             }
             loan.save();
         }
-        console.log('userLoans', userLoans);
         userLoans.forEach(loan => {
             loan.orders = loan.orders.sort((a, b) => b.date.getTime() - a.date.getTime());
         });
-        console.log('userLoans after', userLoans);
         return this.mapLoanEntityToDto(userLoans);
     }
 
@@ -130,6 +126,7 @@ export class LoansService {
     async delete(id: any) {
       const loan = await this.loanModel.findOne({ '_id': Types.ObjectId.createFromHexString(id) });
       loan.deleted = true;
+      loan.status = LoanStatus.CANCELLED;
       loan.save();
       return loan;
     }
