@@ -4,8 +4,7 @@ export type LoanDocument = Loan & Document;
 
 export enum LoanStatus {
   ACTIVE = 'active',
-  PAID = 'paid',
-  OVERDUE = 'overdue',
+  COMPLETE = 'completed',
   CANCELLED = 'cancelled',
 }
 
@@ -91,6 +90,9 @@ export class Loan {
 
   @Prop({ default: Date.now })
   createdAt: Date;
+
+  @Prop({default: false})
+  deleted:boolean
 }
 
 export const LoanSchema = SchemaFactory.createForClass(Loan);

@@ -1,4 +1,4 @@
-import { IsNumber, IsString, IsOptional, IsEnum, IsArray, ValidateNested, IsDateString } from 'class-validator';
+import { IsNumber, IsString, IsOptional, IsEnum, IsArray, ValidateNested, IsDateString, isBoolean } from 'class-validator';
 import { Type } from 'class-transformer';
 import { LoanStatus } from '../loan.entity';
 
@@ -66,4 +66,13 @@ export class CreateLoanDto {
   @ValidateNested()
   @Type(() => UserDto)
   user: UserDto;
+}
+
+export class UpdateLoanDto {
+
+  @IsEnum(LoanStatus)
+  status?: LoanStatus;
+
+  @IsOptional()
+  deleted?: boolean;
 }

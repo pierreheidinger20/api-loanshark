@@ -2,12 +2,15 @@ import { ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Loan, LoanDocument, LoanStatus, Order, User } from './loan.entity';
-import { CreateLoanDto } from './dto/loan.dto';
+import { CreateLoanDto, UpdateLoanDto } from './dto/loan.dto';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { LoanOutDto } from './dto/loanOut.dto';
+import { Types } from 'mongoose';
+
 
 @Injectable()
 export class LoansService {
+    
     constructor(
         @InjectModel(Loan.name) private loanModel: Model<LoanDocument>,
     ) { }
@@ -23,7 +26,7 @@ export class LoansService {
         }
         let loans
             = await this.loanModel
-                .find({ user, 'user.username': username })
+                .find({ user, 'user.username': username ,'deleted': false })
                 .sort({ createdAt: -1 })
                 .populate('user', 'username')
         loans.forEach(loan => {
@@ -33,11 +36,13 @@ export class LoansService {
     }
 
     async createUserOrders(username: string): Promise<Record<string, any>> {
+        console.log('createUserOrders for', username);
         let userLoans
             = await this.loanModel
                 .find({ 'user.username': username })
                 .sort({ createdAt: -1 });
 
+        console.log('userLoans before', userLoans);
         for (let loan of userLoans) {
             var orders = loan.orders;
             var countOrders = orders.length;
@@ -109,5 +114,23 @@ export class LoansService {
         order.status = status;
         await loan.save();
         return order;
+    }
+
+    async update(id: any, updateLoanDto: UpdateLoanDto) {
+      const loan = await this.loanModel.findOne({ '_id':  Types.ObjectId.createFromHexString(id) });
+      console.log(loan);
+      if (!loan) {
+        throw new Error('Loan not found');
+      }
+      loan.status = updateLoanDto.status;
+      loan.save();
+      return loan;
+    }
+
+    async delete(id: any) {
+      const loan = await this.loanModel.findOne({ '_id': Types.ObjectId.createFromHexString(id) });
+      loan.deleted = true;
+      loan.save();
+      return loan;
     }
 }
