@@ -81,9 +81,9 @@ export class LoansService {
     async getIndicatorsByUser(username: string) {
         let loans
             = await this.loanModel
-                .find({ 'user.username': username })
+                .find({ 'user.username': username , 'deleted': false , status: LoanStatus.ACTIVE})
                 .sort({ createdAt: -1 });
-        loans = loans.filter(loan => loan.status === LoanStatus.ACTIVE);
+        
         let totalActiveLoans = loans.length;
         let totalActiveAmount = loans.reduce((sum, loan) => sum + loan.amount, 0);
         let totalActiveMonthlyInterest = loans.reduce((sum, loan) => sum + (loan.amount * loan.interestRate) / 100, 0);
