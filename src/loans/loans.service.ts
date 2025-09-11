@@ -16,7 +16,7 @@ export class LoansService {
     ) { }
 
     async create(user: User, loanData: CreateLoanDto): Promise<Loan> {
-        const createdLoan = new this.loanModel({ ...loanData, user });
+        const createdLoan = new this.loanModel({ ...loanData, startDate: new Date(loanData.startDate), user });
         return createdLoan.save();
     }
 
