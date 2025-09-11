@@ -38,7 +38,7 @@ export class Order {
   @Prop({ required: true })
   amount: number;
 
-  @Prop({ required: true })
+  @Prop({ required: true, type: Date })
   date: Date;
 
   @Prop({ default: 'pending' })
@@ -61,10 +61,10 @@ export class Loan {
   @Prop({ required: true })
   interestRate: number;
 
-  @Prop({ required: true })
+  @Prop({ required: true, type: Date })
   startDate: Date;
 
-  @Prop()
+  @Prop({ type: Date })
   endDate: Date;
 
   @Prop({ required: true })
@@ -88,7 +88,7 @@ export class Loan {
   @Prop({ type: UserSchema, required: true })
   user: User;
 
-  @Prop({ default: Date.now })
+  @Prop({ default: Date.now , type: Date })
   createdAt: Date;
 
   @Prop({default: false})
