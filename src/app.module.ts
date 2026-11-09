@@ -1,8 +1,13 @@
 import { ConsoleLogger, Module } from '@nestjs/common';
 import { APP_GUARD, RouterModule } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { CommonFeaturesModule, Config, JwtAuthGuard, RolesGuard } from 'common-features';
-import { MongooseModule } from '@nestjs/mongoose'
+import {
+  CommonFeaturesModule,
+  Config,
+  JwtAuthGuard,
+  RolesGuard,
+} from 'common-features';
+import { MongooseModule } from '@nestjs/mongoose';
 import { Database } from './configuration/interfaces/database';
 import { LoansModule } from './loans/loans.module';
 
@@ -16,7 +21,13 @@ import { LoansModule } from './loans/loans.module';
       useFactory: async (configService: ConfigService) => {
         const dataBaseConfig = configService.get<Database>('database');
         const uri = `${dataBaseConfig.url}/${dataBaseConfig.database}`;
-        return { uri, ssl: dataBaseConfig.ssl };
+        return {
+          uri,
+          ssl: dataBaseConfig.ssl,
+          maxPoolSize: 5,
+          minPoolSize: 0,
+          maxIdleTimeMS: 30000,
+        };
       },
       inject: [ConfigService],
     }),
@@ -24,12 +35,12 @@ import { LoansModule } from './loans/loans.module';
       {
         path: 'loans',
         module: LoansModule,
-      }
+      },
     ]),
     LoansModule,
-    CommonFeaturesModule
+    CommonFeaturesModule,
   ],
-  providers: [    
+  providers: [
     ConsoleLogger,
     {
       provide: APP_GUARD,
@@ -39,6 +50,6 @@ import { LoansModule } from './loans/loans.module';
     //   provide: APP_GUARD,
     //   useClass: RolesGuard,
     // },
-  ]
+  ],
 })
-export class AppModule { }
+export class AppModule {}
