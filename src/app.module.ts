@@ -7,7 +7,7 @@ import {
   JwtAuthGuard,
   RolesGuard,
 } from 'common-features';
-import { MongooseModule } from '@nestjs/mongoose';
+import { TypeOrmModule } from '@nestjs/typeorm';
 import { Database } from './configuration/interfaces/database';
 import { LoansModule } from './loans/loans.module';
 
@@ -16,17 +16,21 @@ import { LoansModule } from './loans/loans.module';
     ConfigModule.forRoot({
       load: [Config],
     }),
-    MongooseModule.forRootAsync({
+    TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => {
         const dataBaseConfig = configService.get<Database>('database');
-        const uri = `${dataBaseConfig.url}/${dataBaseConfig.database}`;
         return {
-          uri,
-          ssl: dataBaseConfig.ssl,
-          maxPoolSize: 5,
-          minPoolSize: 0,
-          maxIdleTimeMS: 30000,
+          type: 'postgres',
+          url: dataBaseConfig.url,
+          host: dataBaseConfig.server,
+          port: dataBaseConfig.port ? Number(dataBaseConfig.port) : 5432,
+          username: dataBaseConfig.user,
+          password: dataBaseConfig.password,
+          database: dataBaseConfig.database,
+          ssl: dataBaseConfig.ssl ? { rejectUnauthorized: dataBaseConfig.rejectUnauthorized !== false } : false,
+          autoLoadEntities: true,
+          synchronize: dataBaseConfig.synchronize === true,
         };
       },
       inject: [ConfigService],

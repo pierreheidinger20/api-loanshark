@@ -24,7 +24,7 @@ export class LoansController {
   async update(@Request() request, @Param('id') id: string, @Body() updateLoanDto: UpdateLoanDto) {
     const user = request['user'];
     console.log(updateLoanDto);
-    return this.loansService.update(id,updateLoanDto);
+    return this.loansService.update(id, updateLoanDto);
   }
 
   @Post(':username/orders')

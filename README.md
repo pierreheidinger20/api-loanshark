@@ -32,6 +32,15 @@
 $ npm install
 ```
 
+## Database
+
+The API uses PostgreSQL. Configure either `DATABASE_URL` or the individual
+`DATABASE_USER`, `DATABASE_PASSWORD`, `DATABASE_NAME`, `DATABASE_HOST`, and
+`DATABASE_PORT` variables. Set `DATABASE_SSL=true` when the provider requires
+SSL. Set `TYPEORM_SYNCHRONIZE=true` to let TypeORM create/update the schema
+(recommended only for local development); production deployments should apply
+an explicit schema migration before starting the API.
+
 ## Running the app
 
 ```bash

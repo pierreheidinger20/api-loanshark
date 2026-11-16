@@ -1,14 +1,14 @@
 export default () => ({
   database: {
-    user: 'mongo',
-    password: 'uxkZbIPsXMMMlPuGdSXhzXGBlgtoOmDp',
-    database: 'admin',
-    server: 'shinkansen.proxy.rlwy.net',
-    port: '28836',
-    synchronize: true,
-    ssl: false,
-    rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED,
-    url: "mongodb://mongo:uxkZbIPsXMMMlPuGdSXhzXGBlgtoOmDp@shinkansen.proxy.rlwy.net:28836",
+    user: "postgres",
+    password: "VjIFfSIazdEWYtFJvhJrLDxdYSutkbxl",
+    database: "railway",
+    server: "monorail.proxy.rlwy.net",
+    port: 28244,
+    synchronize: process.env.SYNCRONIZE === 'true' || process.env.TYPEORM_SYNCHRONIZE === 'true',
+    ssl: process.env.SSL === 'true' || process.env.DATABASE_SSL === 'true',
+    rejectUnauthorized: process.env.NODE_TLS_REJECT_UNAUTHORIZED !== '0',
+    url: "postgresql://postgres:VjIFfSIazdEWYtFJvhJrLDxdYSutkbxl@monorail.proxy.rlwy.net:28244/railway",
   },
   jwt: {
     secret: 'Kyoku@1P=W5Yp0hh+tJc',
@@ -17,10 +17,6 @@ export default () => ({
   bcrypt: {
     saltOrRounds: 10,
   },
-  externalServices: {
-    google: {
-      clientID: '',
-    },
-  },
+  externalServices: {},
   twilio: {},
 });

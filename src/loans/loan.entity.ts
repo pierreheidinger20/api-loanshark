@@ -1,6 +1,5 @@
-import { Prop, Schema, SchemaFactory, } from '@nestjs/mongoose';
-import { Document } from 'mongoose';
-export type LoanDocument = Loan & Document;
+import { Column, CreateDateColumn, Entity, PrimaryColumn } from 'typeorm';
+import { randomBytes } from 'crypto';
 
 export enum LoanStatus {
   ACTIVE = 'active',
@@ -13,86 +12,61 @@ export enum PaymentFrequency {
   YEARLY = 'yearly',
 }
 
-// Define el esquema embebido para User
-@Schema({ _id: false })
 export class User {
-  @Prop({ required: true })
   username: string;
-
-  @Prop({ required: true })
   email: string;
-
-  @Prop({ required: true })
   full_name: string;
 }
 
-export const UserSchema = SchemaFactory.createForClass(User);
-
-
-// Define el esquema embebido para Order
-@Schema({ _id: false })
 export class Order {
-  @Prop({ required: true })
   orderId: string;
-
-  @Prop({ required: true })
   amount: number;
-
-  @Prop({ required: true, type: Date })
   date: Date;
-
-  @Prop({ default: 'pending' })
   status: string;
-
-  @Prop()
   createdAt: Date;
 }
 
-export const OrderSchema = SchemaFactory.createForClass(Order);
-
-@Schema({
-  versionKey: false
-})
+@Entity('loans')
 export class Loan {
+  @PrimaryColumn({ type: 'varchar', length: 24 })
+  id: string = randomBytes(12).toString('hex');
 
-  @Prop({ required: true })
+  @Column('double precision')
   amount: number;
 
-  @Prop({ required: true })
+  @Column('double precision')
   interestRate: number;
 
-  @Prop({ required: true, type: Date })
+  @Column('timestamptz')
   startDate: Date;
 
-  @Prop({ type: Date })
+  @Column('timestamptz', { nullable: true })
   endDate: Date;
 
-  @Prop({ required: true })
+  @Column()
   borrowerName: string;
 
-  @Prop({ required: true })
+  @Column()
   lenderName: string;
 
-  @Prop({ enum: LoanStatus, default: LoanStatus.ACTIVE })
+  @Column({ type: 'enum', enum: LoanStatus, default: LoanStatus.ACTIVE })
   status: LoanStatus;
 
-  @Prop({ type: [String], default: [] })
+  @Column('text', { array: true, default: () => "'{}'" })
   addresses: string[];
 
-  @Prop({ enum: PaymentFrequency, default: PaymentFrequency.MONTHLY })
+  @Column({ type: 'enum', enum: PaymentFrequency, default: PaymentFrequency.MONTHLY })
   paymentFrequency: PaymentFrequency;
 
-  @Prop({ type: [OrderSchema], default: [] })
+  @Column('jsonb', { default: () => "'[]'::jsonb" })
   orders: Order[];
 
-  @Prop({ type: UserSchema, required: true })
+  @Column('jsonb')
   user: User;
 
-  @Prop({ default: Date.now , type: Date })
+  @CreateDateColumn({ type: 'timestamptz' })
   createdAt: Date;
 
-  @Prop({default: false})
-  deleted:boolean
+  @Column({ default: false })
+  deleted: boolean;
 }
-
-export const LoanSchema = SchemaFactory.createForClass(Loan);

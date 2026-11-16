@@ -17,7 +17,7 @@ export class OrderOutDto {
 
 export class LoanOutDto {
     @Expose()
-    id: number;
+    id: string;
 
     @Expose()
     amount: number;

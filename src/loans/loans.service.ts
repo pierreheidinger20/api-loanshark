@@ -1,133 +1,151 @@
-import { ForbiddenException, Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { Loan, LoanDocument, LoanStatus, Order, User } from './loan.entity';
+import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { Loan, LoanStatus, Order, User } from './loan.entity';
 import { CreateLoanDto, UpdateLoanDto } from './dto/loan.dto';
 import { instanceToPlain, plainToInstance } from 'class-transformer';
 import { LoanOutDto } from './dto/loanOut.dto';
-import { Types } from 'mongoose';
-
 
 @Injectable()
 export class LoansService {
-    
-    constructor(
-        @InjectModel(Loan.name) private loanModel: Model<LoanDocument>,
-    ) { }
+  constructor(@InjectRepository(Loan) private readonly loanRepository: Repository<Loan>) {}
 
-    async create(user: User, loanData: CreateLoanDto): Promise<Loan> {
-        const createdLoan = new this.loanModel({ ...loanData, startDate: new Date(loanData.startDate), user });
-        return createdLoan.save();
+  async create(user: User, loanData: CreateLoanDto): Promise<Loan> {
+    const loan = this.loanRepository.create({
+      ...loanData,
+      startDate: new Date(loanData.startDate),
+      endDate: loanData.endDate ? new Date(loanData.endDate) : null,
+      user,
+      orders: (loanData.orders || []).map((order) => ({
+        ...order,
+        date: new Date(order.date),
+      })),
+    });
+    return this.normalizeLoan(await this.loanRepository.save(loan));
+  }
+
+  async findAllByUser(user: User, username: string) {
+    if (user.username !== username) {
+      throw new ForbiddenException('You can only access your own loans');
     }
+    const loans = await this.loanRepository
+      .createQueryBuilder('loan')
+      .where('loan.user = :user', { user: JSON.stringify(user) })
+      .andWhere("loan.user ->> 'username' = :username", { username })
+      .andWhere('loan.deleted = false')
+      .orderBy('loan.createdAt', 'DESC')
+      .getMany();
+    loans.forEach((loan) => {
+      loan.orders = this.sortOrders(loan.orders, 'DESC');
+    });
+    return this.mapLoanEntityToDto(loans);
+  }
 
-    async findAllByUser(user: User, username: string) {
-        if (user.username !== username) {
-            throw new ForbiddenException("You can only access your own loans");
-        }
-        let loans
-            = await this.loanModel
-                .find({ user, 'user.username': username ,'deleted': false })
-                .sort({ createdAt: -1 })
-                .populate('user', 'username')
-        loans.forEach(loan => {
-            loan.orders = loan.orders.sort((a, b) => b.date.getTime() - a.date.getTime());
+  async createUserOrders(username: string): Promise<Record<string, any>> {
+    const loans = await this.loanRepository
+      .createQueryBuilder('loan')
+      .where("loan.user ->> 'username' = :username", { username })
+      .andWhere('loan.deleted = false')
+      .andWhere('loan.status = :status', { status: LoanStatus.ACTIVE })
+      .orderBy('loan.createdAt', 'DESC')
+      .getMany();
+
+    for (const loan of loans) {
+      const orders = this.sortOrders(loan.orders || [], 'ASC');
+      let startDate = new Date(loan.startDate);
+      if (orders.length > 0) startDate = new Date(orders[orders.length - 1].date);
+      const dateNow = new Date();
+      dateNow.setDate(startDate.getDate());
+      while (dateNow > startDate) {
+        startDate.setMonth(startDate.getMonth() + 1);
+        loan.orders.push({
+          orderId: `${loan.id}-${startDate.getFullYear()}-${startDate.getMonth() + 1}`,
+          amount: Number(((Number(loan.amount) * Number(loan.interestRate)) / 100).toFixed(2)),
+          date: new Date(startDate),
+          status: 'pending',
+          createdAt: new Date(),
         });
-        return this.mapLoanEntityToDto(loans);
-    }
-
-    async createUserOrders(username: string): Promise<Record<string, any>> {
-        let userLoans
-            = await this.loanModel
-                .find({ 'user.username': username , 'deleted': false , status: LoanStatus.ACTIVE})
-                .sort({ createdAt: -1 });
-        console.log(userLoans);
-        for (let loan of userLoans) {
-            var orders = loan.orders;
-            var countOrders = orders.length;
-            var startDate = new Date(loan.startDate);
-            var dateNow = new Date();
-            if (countOrders > 0) {
-                orders = orders.sort((a, b) => a.date.getTime() - b.date.getTime());
-                let lastOrder = orders[orders.length - 1];
-                startDate = new Date(lastOrder.date);
-            }
-            dateNow.setDate(startDate.getDate());
-            while (dateNow > startDate) {
-                startDate.setMonth(startDate.getMonth() + 1);
-                let order = new Order();
-                order.orderId = `${loan.id}-${startDate.getFullYear()}-${startDate.getMonth() + 1}`;
-                order.amount = Number(((loan.amount * loan.interestRate) / 100).toFixed(2));
-                order.date = new Date(startDate);
-                order.status = 'pending';
-                order.createdAt = new Date();
-                loan.orders.push(order);
-            }
-            loan.save();
-        }
-        userLoans.forEach(loan => {
-            loan.orders = loan.orders.sort((a, b) => b.date.getTime() - a.date.getTime());
-        });
-        return this.mapLoanEntityToDto(userLoans);
-    }
-
-    private mapLoanEntityToDto(loans: Loan[]) {
-
-        let loansDto = plainToInstance(LoanOutDto, loans, {
-            excludeExtraneousValues: true,
-        });
-        return instanceToPlain(loansDto);
-    }
-
-    async getIndicatorsByUser(username: string) {
-        let loans
-            = await this.loanModel
-                .find({ 'user.username': username , 'deleted': false , status: LoanStatus.ACTIVE})
-                .sort({ createdAt: -1 });
-        
-        let totalActiveLoans = loans.length;
-        let totalActiveAmount = loans.reduce((sum, loan) => sum + loan.amount, 0);
-        let totalActiveMonthlyInterest = loans.reduce((sum, loan) => sum + (loan.amount * loan.interestRate) / 100, 0);
-        let totalAmountOrdersPaids = loans.map(loan => loan.orders.filter(order => order.status === 'paid'))
-            .flat()
-            .reduce((sum, order) => sum + order.amount, 0);
-        return {
-            totalActiveLoans: totalActiveLoans,
-            totalActiveAmount: Number(totalActiveAmount.toFixed(2)),
-            totalActiveMonthlyInterest: Number(totalActiveMonthlyInterest.toFixed(2)),
-            totalAmountOrdersPaids: Number(totalAmountOrdersPaids.toFixed(2)),
-        };
-    }
-
-    async updateOrderStatus(username: string, orderId: string, status: string) {
-        const loan = await this.loanModel.findOne({ 'orders.orderId': orderId });
-        if (!loan) {
-            throw new Error('Loan not found');
-        }
-        const order = loan.orders.find(order => order.orderId === orderId);
-        if (!order) {
-            throw new Error('Order not found');
-        }
-        order.status = status;
-        await loan.save();
-        return order;
-    }
-
-    async update(id: any, updateLoanDto: UpdateLoanDto) {
-      const loan = await this.loanModel.findOne({ '_id':  Types.ObjectId.createFromHexString(id) });
-      console.log(loan);
-      if (!loan) {
-        throw new Error('Loan not found');
       }
-      loan.status = updateLoanDto.status;
-      loan.save();
-      return loan;
     }
+    await this.loanRepository.save(loans);
+    loans.forEach((loan) => {
+      loan.orders = this.sortOrders(loan.orders || [], 'DESC');
+    });
+    return this.mapLoanEntityToDto(loans);
+  }
 
-    async delete(id: any) {
-      const loan = await this.loanModel.findOne({ '_id': Types.ObjectId.createFromHexString(id) });
-      loan.deleted = true;
-      loan.status = LoanStatus.CANCELLED;
-      loan.save();
-      return loan;
-    }
+  private mapLoanEntityToDto(loans: Loan[]) {
+    loans.forEach((loan) => this.normalizeLoan(loan));
+    return instanceToPlain(plainToInstance(LoanOutDto, loans, { excludeExtraneousValues: true }));
+  }
+
+  async getIndicatorsByUser(username: string) {
+    const loans = await this.loanRepository
+      .createQueryBuilder('loan')
+      .where("loan.user ->> 'username' = :username", { username })
+      .andWhere('loan.deleted = false')
+      .andWhere('loan.status = :status', { status: LoanStatus.ACTIVE })
+      .orderBy('loan.createdAt', 'DESC')
+      .getMany();
+    return {
+      totalActiveLoans: loans.length,
+      totalActiveAmount: Number(loans.reduce((sum, loan) => sum + Number(loan.amount), 0).toFixed(2)),
+      totalActiveMonthlyInterest: Number(
+        loans.reduce((sum, loan) => sum + (Number(loan.amount) * Number(loan.interestRate)) / 100, 0).toFixed(2),
+      ),
+      totalAmountOrdersPaids: Number(
+        loans
+          .flatMap((loan) => loan.orders || [])
+          .filter((order) => order.status === 'paid')
+          .reduce((sum, order) => sum + Number(order.amount), 0)
+          .toFixed(2),
+      ),
+    };
+  }
+
+  async updateOrderStatus(username: string, orderId: string, status: string) {
+    const loans = await this.loanRepository
+      .createQueryBuilder('loan')
+      .where("loan.orders @> :order", { order: JSON.stringify([{ orderId }]) })
+      .getMany();
+    const loan = loans.find((item) => (item.orders || []).some((order) => order.orderId === orderId));
+    if (!loan) throw new NotFoundException('Loan or order not found');
+    const order = loan.orders.find((item) => item.orderId === orderId);
+    order.status = status;
+    await this.loanRepository.save(loan);
+    return this.normalizeLoan(loan).orders.find((item) => item.orderId === orderId);
+  }
+
+  async update(id: string, updateLoanDto: UpdateLoanDto) {
+    const loan = await this.loanRepository.findOneBy({ id });
+    if (!loan) throw new NotFoundException('Loan not found');
+    if (updateLoanDto.status) loan.status = updateLoanDto.status;
+    if (updateLoanDto.deleted !== undefined) loan.deleted = updateLoanDto.deleted;
+    return this.normalizeLoan(await this.loanRepository.save(loan));
+  }
+
+  async delete(id: string) {
+    const loan = await this.loanRepository.findOneBy({ id });
+    if (!loan) throw new NotFoundException('Loan not found');
+    loan.deleted = true;
+    loan.status = LoanStatus.CANCELLED;
+    return this.normalizeLoan(await this.loanRepository.save(loan));
+  }
+
+  private sortOrders(orders: Order[], direction: 'ASC' | 'DESC') {
+    return [...(orders || [])].sort((a, b) =>
+      direction === 'ASC'
+        ? new Date(a.date).getTime() - new Date(b.date).getTime()
+        : new Date(b.date).getTime() - new Date(a.date).getTime(),
+    );
+  }
+
+  private normalizeLoan(loan: Loan): Loan {
+    loan.orders = (loan.orders || []).map((order) => ({
+      ...order,
+      date: order.date ? new Date(order.date) : order.date,
+      createdAt: order.createdAt ? new Date(order.createdAt) : order.createdAt,
+    }));
+    return loan;
+  }
 }
