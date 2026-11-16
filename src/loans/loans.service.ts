@@ -30,7 +30,7 @@ export class LoansService {
     }
     const loans = await this.loanRepository
       .createQueryBuilder('loan')
-      .where('loan.user = :user', { user: JSON.stringify(user) })
+      // .where('loan.user = :user', { user: JSON.stringify(user) })
       .andWhere("loan.user ->> 'username' = :username", { username })
       .andWhere('loan.deleted = false')
       .orderBy('loan.createdAt', 'DESC')

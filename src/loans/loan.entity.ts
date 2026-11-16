@@ -26,7 +26,7 @@ export class Order {
   createdAt: Date;
 }
 
-@Entity('loans')
+@Entity('loans', { schema: 'public' })
 export class Loan {
   @PrimaryColumn({ type: 'varchar', length: 24 })
   id: string = randomBytes(12).toString('hex');
